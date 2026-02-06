@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 const API_BASE = "/monitor-api";
 
@@ -34,6 +34,20 @@ function Card({ title, value }) {
   );
 }
 
+function formatUptime(seconds) {
+  if (seconds == null) return "—";
+  const s = Number(seconds);
+  if (Number.isNaN(s)) return "—";
+
+  const days = Math.floor(s / 86400);
+  const hours = Math.floor((s % 86400) / 3600);
+  const mins = Math.floor((s % 3600) / 60);
+
+  if (days > 0) return `${days}d ${hours}h ${mins}m`;
+  if (hours > 0) return `${hours}h ${mins}m`;
+  return `${mins}m`;
+}
+
 export default function App() {
   const [data, setData] = useState(null);
   const [error, setError] = useState("");
@@ -42,12 +56,12 @@ export default function App() {
   async function fetchMetrics() {
     try {
       setError("");
-      const res = await fetch(`${API_BASE}/api/metrics`);
+      const res = await fetch(`${API_BASE}/api/metrics`, { cache: "no-store" });
       const json = await res.json();
-      if (!res.ok) throw new Error(json.error || "Request failed");
+      if (!res.ok) throw new Error(json?.error || "Request failed");
       setData(json);
     } catch (e) {
-      setError(e.message);
+      setError(e?.message ?? String(e));
       setData({ ok: false });
     }
   }
@@ -56,9 +70,49 @@ export default function App() {
     fetchMetrics();
     const id = setInterval(fetchMetrics, intervalSec * 1000);
     return () => clearInterval(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [intervalSec]);
 
-  const metrics = data?.metrics;
+  // Normalize FastAPI response -> UI-friendly fields
+  const ui = useMemo(() => {
+    const m = data?.metrics;
+    if (!m) {
+      return {
+        cpu: "—",
+        mem: "—",
+        disk: "—",
+        load: "—",
+        uptime: "—",
+        hostname: "",
+      };
+    }
+
+    const cpu = m.cpu_percent != null ? `${m.cpu_percent}%` : "—";
+    const mem = m.mem_percent != null ? `${m.mem_percent}%` : "—";
+
+    // Show root disk "/" if present, otherwise first disk entry
+    const rootDisk =
+      Array.isArray(m.disk) && m.disk.length > 0
+        ? m.disk.find((d) => d.mount === "/") || m.disk[0]
+        : null;
+    const disk = rootDisk?.percent != null ? `${rootDisk.percent}%` : "—";
+
+    const load =
+      Array.isArray(m.load_avg) && m.load_avg.length === 3
+        ? `${m.load_avg[0]} ${m.load_avg[1]} ${m.load_avg[2]}`
+        : "—";
+
+    const uptime = formatUptime(m.uptime_seconds);
+
+    return {
+      cpu,
+      mem,
+      disk,
+      load,
+      uptime,
+      hostname: m.hostname ?? "",
+    };
+  }, [data]);
 
   return (
     <div
@@ -77,7 +131,14 @@ export default function App() {
           marginBottom: 20,
         }}
       >
-        <h1 style={{ margin: 0 }}>Server Monitor</h1>
+        <div>
+          <h1 style={{ margin: 0 }}>Server Monitor</h1>
+          {ui.hostname ? (
+            <div style={{ fontSize: 12, color: "#6b7280", marginTop: 4 }}>
+              Host: {ui.hostname}
+            </div>
+          ) : null}
+        </div>
         <StatusBadge ok={data?.ok} />
       </div>
 
@@ -96,9 +157,7 @@ export default function App() {
       </div>
 
       {error && (
-        <div style={{ color: "#dc2626", marginBottom: 16 }}>
-          Error: {error}
-        </div>
+        <div style={{ color: "#dc2626", marginBottom: 16 }}>Error: {error}</div>
       )}
 
       <div
@@ -108,19 +167,15 @@ export default function App() {
           gap: 16,
         }}
       >
-        <Card title="CPU Usage" value={metrics ? `${metrics.cpuPct}%` : "—"} />
-        <Card
-          title="Memory Usage"
-          value={metrics ? `${metrics.memPct}%` : "—"}
-        />
-        <Card title="Disk Usage" value={metrics?.diskPct ?? "—"} />
-        <Card title="Load Avg" value={metrics?.loadAvg ?? "—"} />
-        <Card title="Uptime" value={metrics?.uptime ?? "—"} />
+        <Card title="CPU Usage" value={ui.cpu} />
+        <Card title="Memory Usage" value={ui.mem} />
+        <Card title="Disk Usage" value={ui.disk} />
+        <Card title="Load Avg" value={ui.load} />
+        <Card title="Uptime" value={ui.uptime} />
       </div>
 
       <div style={{ marginTop: 20, color: "#6b7280", fontSize: 12 }}>
-        Last check:{" "}
-        {data?.ts ? new Date(data.ts).toLocaleString() : "—"}
+        Last check: {data?.ts ? new Date(data.ts).toLocaleString() : "—"}
       </div>
     </div>
   );
