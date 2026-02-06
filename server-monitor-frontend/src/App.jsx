@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-const API_BASE = "http://localhost:8080";
+const API_BASE = "/monitor-api";
 
 function StatusBadge({ ok }) {
   return (
