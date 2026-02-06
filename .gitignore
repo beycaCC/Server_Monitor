@@ -1,60 +1,108 @@
-# ===============================
-# Node.js
-# ===============================
-node_modules/
+################################
+# OS / Editor
+################################
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.swo
+
+################################
+# Logs
+################################
+logs/
+*.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
-.env
-.env.local
-.env.*.local
 
-# ===============================
-# Build outputs
-# ===============================
+################################
+# Environment Variables
+################################
+.env
+.env.*
+!.env.example
+
+################################
+# Node / React Frontend
+################################
+node_modules/
 dist/
 build/
-out/
-
-# ===============================
-# Vite
-# ===============================
-.vite/
-
-# ===============================
-# React
-# ===============================
+.out/
+.next/
 .cache/
-.eslintcache
-
-# ===============================
-# Testing
-# ===============================
+.parcel-cache/
 coverage/
 
-# ===============================
-# OS / Editor junk
-# ===============================
-.DS_Store
-Thumbs.db
+# Vite
+vite.config.ts.timestamp-*
+*.local
 
-# VS Code
-.vscode/
-!.vscode/extensions.json
+################################
+# Python / FastAPI Backend
+################################
+__pycache__/
+*.py[cod]
+*$py.class
 
-# IntelliJ / WebStorm
-.idea/
+# Virtual Environments
+venv/
+.venv/
+env/
+ENV/
+env.bak/
+venv.bak/
 
-# ===============================
-# Logs
-# ===============================
-logs/
-*.log
+# Python packaging
+*.egg-info/
+.eggs/
+dist/
+build/
+pip-wheel-metadata/
 
-# ===============================
-# Optional: lockfiles (uncomment if needed)
-# ===============================
-# package-lock.json
-# yarn.lock
-# pnpm-lock.yaml
+# Testing
+.pytest_cache/
+.coverage
+coverage.xml
+htmlcov/
+
+# Mypy / Ruff / Linters
+.mypy_cache/
+.ruff_cache/
+.pyre/
+
+################################
+# Uvicorn / FastAPI runtime
+################################
+*.pid
+*.sock
+
+################################
+# Databases / Local files
+################################
+*.sqlite3
+*.db
+
+################################
+# System / Temp
+################################
+tmp/
+temp/
+*.tmp
+
+################################
+# Docker (if used)
+################################
+docker-compose.override.yml
+
+################################
+# Secrets / Keys
+################################
+*.pem
+*.key
+*.crt
+id_rsa
+id_rsa.pub
